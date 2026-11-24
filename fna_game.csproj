@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>fna_game</AssemblyName>
+    <RootNamespace>fna_game</RootNamespace>
+    <NoWarn>$(NoWarn);CA2255</NoWarn>
+    <FnaDir>$(MSBuildProjectDirectory)/fna</FnaDir>
+    <NativeDir>$(FnaDir)/fnalibs</NativeDir>
+  </PropertyGroup>
+
+  <!-- Don't compile FNA's source as part of the game; it's built via the project reference -->
+  <ItemGroup>
+    <Compile Remove="fna/**" />
+    <None Remove="fna/**" />
+    <EmbeddedResource Remove="fna/**" />
+    <Compile Remove="fnalibs/**" />
+    <None Remove="fnalibs/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FnaDir)/FNA.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Copy native libs for this OS next to the exe -->
+  <Target Name="FnaNatives" AfterTargets="Build">
+    <ItemGroup>
+      <NativeLib Condition="$([MSBuild]::IsOSPlatform('Windows'))" Include="$(NativeDir)/x64/*.dll" />
+      <NativeLib Condition="$([MSBuild]::IsOSPlatform('Linux'))"   Include="$(NativeDir)/lib64/*.so*" />
+      <NativeLib Condition="$([MSBuild]::IsOSPlatform('OSX'))"     Include="$(NativeDir)/osx/*.dylib" />
+    </ItemGroup>
+    <Warning Condition="'@(NativeLib)' == ''"
+             Text="No native libs found in $(NativeDir). Put the fnalibs folders (x64, lib64, osx) there." />
+    <Copy SourceFiles="@(NativeLib)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
